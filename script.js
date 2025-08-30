@@ -1,3 +1,16 @@
+// Canvas setup
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+// Canvas ko hamesha screen ke size ke according resize karna
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+// Page load aur resize hone par canvas adjust hoga
+window.addEventListener("load", resizeCanvas);
+window.addEventListener("resize", resizeCanvas);
 let canvas = document.getElementById("gameCanvas");
 let ctx = canvas.getContext("2d");
 
