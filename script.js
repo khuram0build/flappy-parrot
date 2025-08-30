@@ -28,13 +28,35 @@ let velocity = 0;
 
 let pipes = [];
 let pipeWidth = 60;
-let pipeGap = 150;
+let pipeGap = 200; // start gap bada rakha hai easy ke liye
 let frame = 0;
 let score = 0;
 let bestScore = localStorage.getItem("bestScore") || 0;
 let gameOver = false;
 
+// Start speed normal
 let pipeSpeed = 2;
+
+// Difficulty system
+function updateDifficulty() {
+    if (score > 5) {
+        pipeSpeed = 3;
+        pipeGap = 180;
+    }
+    if (score > 10) {
+        pipeSpeed = 4;
+        pipeGap = 160;
+    }
+    if (score > 20) {
+        pipeSpeed = 5;
+        pipeGap = 140;
+    }
+    if (score > 30) {
+        pipeSpeed = 6;
+        pipeGap = 120;
+    }
+}
+
 
 // Clouds + Trees
 let clouds = [{x: 100, y: 50}, {x: 300, y: 100}];
