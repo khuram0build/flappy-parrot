@@ -2,8 +2,10 @@
 let parrotImg = new Image();
 parrotImg.src = "parrot.png";
 
-// Flappy Parrot (Shapes Version)
-// ====================
+function drawParrot() {
+    ctx.drawImage(parrotImg, parrot.x, parrot.y, parrot.width, parrot.height);
+}
+
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
