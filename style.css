@@ -1,12 +1,17 @@
 body {
   margin: 0;
-  background: #87ceeb; /* sky blue */
+  padding: 0;
+  overflow: hidden;
+  background: #70c5ce; /* Fallback color */
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
 }
+
 canvas {
   border: 2px solid #000;
-  background: #87ceeb;
+  display: block;
+  background: #70c5ce;
 }
+
