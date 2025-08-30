@@ -1,16 +1,12 @@
-* { box-sizing: border-box; }
 body {
   text-align: center;
-  background: linear-gradient(to bottom, #87ceeb, #e0f7fa);
-  font-family: Arial, Helvetica, sans-serif;
-  margin: 0;
+  background: skyblue;
+  font-family: Arial, sans-serif;
 }
-h1 { margin: 12px 0; color: #0b5; }
+
 canvas {
-  border: 2px solid #333;
-  background: #cceeff;
+  background: white;
   display: block;
-  margin: 8px auto 16px;
-  border-radius: 12px;
+  margin: auto;
+  border: 2px solid black;
 }
-p { margin: 0 0 16px; color: #222; }
