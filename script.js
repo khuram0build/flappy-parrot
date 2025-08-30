@@ -1,4 +1,7 @@
-// ====================
+// Parrot Image Load
+let parrotImg = new Image();
+parrotImg.src = "parrot.png";
+
 // Flappy Parrot (Shapes Version)
 // ====================
 
