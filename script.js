@@ -20,6 +20,22 @@ let score = 0;
 let bestScore = localStorage.getItem("bestScore") || 0;
 
 // Parrot jump
+// Parrot ki jump function
+function jump() {
+  parrot.dy = -8; // upar ki taraf jump speed
+}
+
+// PC ke liye: Spacebar press
+document.addEventListener("keydown", (e) => {
+  if (e.code === "Space") {
+    jump();
+  }
+});
+
+// Mobile ke liye: Screen tap
+canvas.addEventListener("touchstart", () => {
+  jump();
+});
 document.addEventListener("keydown", (e) => {
   if (e.code === "Space") {
     parrot.velocity = parrot.lift;
