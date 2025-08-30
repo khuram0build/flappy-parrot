@@ -1,244 +1,185 @@
-// Parrot Image Load
-let parrotImg = new Image();
-parrotImg.src = "parrot.png";
-
-function drawParrot() {
-    ctx.drawImage(parrotImg, parrot.x, parrot.y, parrot.width, parrot.height);
-}
-
-
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// Auto resize
-function resizeCanvas() {
-  canvas.width = window.innerWidth > 480 ? 480 : window.innerWidth - 20;
-  canvas.height = window.innerHeight > 640 ? 640 : window.innerHeight - 20;
-}
-resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
+// Auto resize canvas
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-// Sounds
-const flapSound = document.getElementById("flapSound");
-const crashSound = document.getElementById("crashSound");
-const pointSound = document.getElementById("pointSound");
+window.addEventListener("resize", () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
 
-// Variables
-let parrotX = 50;
-let parrotY = 150;
-let parrotSize = 30;
-let gravity = 1.2;
-let lift = -18;
-let velocity = 0;
+// Load parrot image
+let parrotImg = new Image();
+parrotImg.src = "parrot.png"; // repo me yahi naam hona chahiye
 
+// Parrot object
+let parrot = {
+  x: 50,
+  y: canvas.height / 2,
+  width: 50,
+  height: 50,
+  gravity: 0.4,
+  lift: -8,
+  velocity: 0
+};
+
+// Pipes
 let pipes = [];
-let pipeWidth = 60;
-let pipeGap = 200; // start gap bada rakha hai easy ke liye
+let pipeWidth = 70;
+let pipeGap = 160;
 let frame = 0;
 let score = 0;
 let bestScore = localStorage.getItem("bestScore") || 0;
 let gameOver = false;
 
-// Start speed normal
+// Difficulty speed
 let pipeSpeed = 2;
 
-// Difficulty system
-function updateDifficulty() {
-    if (score > 5) {
-        pipeSpeed = 3;
-        pipeGap = 180;
-    }
-    if (score > 10) {
-        pipeSpeed = 4;
-        pipeGap = 160;
-    }
-    if (score > 20) {
-        pipeSpeed = 5;
-        pipeGap = 140;
-    }
-    if (score > 30) {
-        pipeSpeed = 6;
-        pipeGap = 120;
-    }
+// Background scroll
+let bgX = 0;
+let groundX = 0;
+
+// Sounds (placeholder)
+let flapSound = new Audio("flap.mp3");
+let crashSound = new Audio("crash.mp3");
+let pointSound = new Audio("point.mp3");
+
+// Draw parrot
+function drawParrot() {
+  ctx.drawImage(parrotImg, parrot.x, parrot.y, parrot.width, parrot.height);
 }
 
+// Draw pipes
+function drawPipes() {
+  ctx.fillStyle = "red"; // red pipes
+  pipes.forEach(pipe => {
+    ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
+    ctx.fillRect(pipe.x, pipe.top + pipeGap, pipeWidth, canvas.height);
+  });
+}
 
-// Clouds + Trees
-let clouds = [{x: 100, y: 50}, {x: 300, y: 100}];
-let trees = [{x: 200, y: canvas.height - 120}, {x: 400, y: canvas.height - 130}];
-
-// Draw Background (sky + clouds + trees + ground)
+// Background sky & ground
 function drawBackground() {
-  // Sky
-  ctx.fillStyle = "#87ceeb";
+  ctx.fillStyle = "#70c5ce"; // sky blue
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Clouds
+  // Moving clouds
   ctx.fillStyle = "white";
-  clouds.forEach(cloud => {
+  for (let i = 0; i < 5; i++) {
     ctx.beginPath();
-    ctx.arc(cloud.x, cloud.y, 20, 0, Math.PI * 2);
-    ctx.arc(cloud.x + 25, cloud.y + 10, 25, 0, Math.PI * 2);
-    ctx.arc(cloud.x + 55, cloud.y, 20, 0, Math.PI * 2);
+    ctx.arc((i * 300 + bgX) % canvas.width, 100, 40, 0, Math.PI * 2);
     ctx.fill();
-    cloud.x -= 0.5;
-    if (cloud.x < -60) cloud.x = canvas.width + 50;
-  });
+  }
 
-  // Trees
-  trees.forEach(tree => {
-    ctx.fillStyle = "sienna"; // trunk
-    ctx.fillRect(tree.x, tree.y, 20, 40);
-    ctx.fillStyle = "green"; // leaves
-    ctx.beginPath();
-    ctx.arc(tree.x + 10, tree.y, 30, 0, Math.PI * 2);
-    ctx.fill();
+  // Moving ground
+  ctx.fillStyle = "#8B4513";
+  ctx.fillRect(groundX, canvas.height - 50, canvas.width, 50);
+  ctx.fillRect(groundX + canvas.width, canvas.height - 50, canvas.width, 50);
 
-    tree.x -= 1;
-    if (tree.x < -50) tree.x = canvas.width + 50;
-  });
+  bgX -= 0.5;
+  groundX -= 2;
 
-  // Ground
-  ctx.fillStyle = "green";
-  ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+  if (groundX <= -canvas.width) groundX = 0;
 }
 
-// Draw Parrot (circle + beak + wing)
-function drawParrot() {
-  // Body
-  ctx.fillStyle = "yellow";
-  ctx.beginPath();
-  ctx.arc(parrotX, parrotY, parrotSize/2, 0, Math.PI * 2);
-  ctx.fill();
+// Handle pipes
+function updatePipes() {
+  if (frame % 100 === 0) {
+    let top = Math.random() * (canvas.height - pipeGap - 100) + 20;
+    pipes.push({ x: canvas.width, top: top });
+  }
 
-  // Beak
-  ctx.fillStyle = "orange";
-  ctx.beginPath();
-  ctx.moveTo(parrotX + parrotSize/2, parrotY);
-  ctx.lineTo(parrotX + parrotSize, parrotY - 5);
-  ctx.lineTo(parrotX + parrotSize, parrotY + 5);
-  ctx.closePath();
-  ctx.fill();
+  pipes.forEach((pipe, index) => {
+    pipe.x -= pipeSpeed;
 
-  // Wing
-  ctx.fillStyle = "red";
-  ctx.beginPath();
-  ctx.arc(parrotX - 5, parrotY, parrotSize/3, 0, Math.PI * 2);
-  ctx.fill();
+    // Collision detection
+    if (
+      parrot.x < pipe.x + pipeWidth &&
+      parrot.x + parrot.width > pipe.x &&
+      (parrot.y < pipe.top || parrot.y + parrot.height > pipe.top + pipeGap)
+    ) {
+      gameOver = true;
+      crashSound.play();
+    }
 
-  // Eye
-  ctx.fillStyle = "black";
-  ctx.beginPath();
-  ctx.arc(parrotX + 5, parrotY - 5, 3, 0, Math.PI * 2);
-  ctx.fill();
-}
+    // Score
+    if (pipe.x + pipeWidth === parrot.x) {
+      score++;
+      pointSound.play();
+      if (score % 5 === 0) {
+        pipeSpeed += 0.5; // speed increase
+        pipeGap -= 5; // harder gap
+      }
+    }
 
-// Draw Pipes
-function drawPipes() {
-  pipes.forEach(pipe => {
-    ctx.fillStyle = "red";
-    // Top pipe
-    ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
-    // Bottom pipe
-    ctx.fillRect(pipe.x, canvas.height - pipe.bottom - 40, pipeWidth, pipe.bottom);
+    // Remove off-screen pipes
+    if (pipe.x + pipeWidth < 0) {
+      pipes.splice(index, 1);
+    }
   });
 }
 
-// Draw Score
+// Show score
 function drawScore() {
-  ctx.fillStyle = "black";
-  ctx.font = "20px Arial";
-  ctx.fillText("Score: " + score, 20, 30);
-  ctx.fillText("Best: " + bestScore, 20, 60);
+  ctx.fillStyle = "white";
+  ctx.font = "30px Arial";
+  ctx.fillText("Score: " + score, 20, 40);
+  ctx.fillText("Best: " + bestScore, 20, 80);
 }
 
-// Update Game
+// Main update loop
 function update() {
   if (gameOver) {
-    ctx.fillStyle = "red";
+    ctx.fillStyle = "black";
     ctx.font = "40px Arial";
-    ctx.fillText("Game Over", canvas.width/2 - 100, canvas.height/2);
-    ctx.font = "20px Arial";
-    ctx.fillText("Your Score: " + score, canvas.width/2 - 60, canvas.height/2 + 40);
-    ctx.fillText("Best Score: " + bestScore, canvas.width/2 - 70, canvas.height/2 + 70);
-    ctx.fillText("Tap or Press Space to Restart", canvas.width/2 - 120, canvas.height/2 + 110);
+    ctx.fillText("Game Over", canvas.width / 2 - 100, canvas.height / 2);
+    ctx.fillText("Score: " + score, canvas.width / 2 - 80, canvas.height / 2 + 50);
+    ctx.fillText("Best: " + bestScore, canvas.width / 2 - 80, canvas.height / 2 + 100);
+
+    if (score > bestScore) {
+      bestScore = score;
+      localStorage.setItem("bestScore", bestScore);
+    }
     return;
   }
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   drawBackground();
+  updatePipes();
+  drawPipes();
 
-  velocity += gravity;
-  parrotY += velocity;
-
-  if (parrotY + parrotSize/2 > canvas.height - 40) {
-    parrotY = canvas.height - 40 - parrotSize/2;
-    crashSound.play();
-    gameOver = true;
-  }
+  parrot.velocity += parrot.gravity;
+  parrot.y += parrot.velocity;
 
   drawParrot();
-
-  if (frame % 90 === 0) {
-    let top = Math.random() * (canvas.height/2);
-    let bottom = canvas.height - top - pipeGap;
-    pipes.push({ x: canvas.width, top: top, bottom: bottom });
-  }
-
-  pipes.forEach(pipe => {
-    pipe.x -= pipeSpeed;
-
-    // Collision
-    if (parrotX + parrotSize/2 > pipe.x && parrotX - parrotSize/2 < pipe.x + pipeWidth) {
-      if (parrotY - parrotSize/2 < pipe.top || parrotY + parrotSize/2 > canvas.height - pipe.bottom - 40) {
-        crashSound.play();
-        gameOver = true;
-      }
-    }
-
-    if (pipe.x + pipeWidth === parrotX) {
-      score++;
-      pointSound.play();
-      if (score > bestScore) {
-        bestScore = score;
-        localStorage.setItem("bestScore", bestScore);
-      }
-
-      // Difficulty increase
-      if (score % 5 === 0) {
-        pipeSpeed += 0.5;
-        pipeGap -= 5;
-      }
-    }
-  });
-
-  drawPipes();
   drawScore();
+
+  // Ground hit
+  if (parrot.y + parrot.height > canvas.height - 50) {
+    gameOver = true;
+    crashSound.play();
+  }
 
   frame++;
   requestAnimationFrame(update);
 }
 
 // Controls
-function jump() {
-  if (gameOver) {
-    pipes = [];
-    score = 0;
-    parrotY = 150;
-    velocity = 0;
-    pipeSpeed = 2;
-    pipeGap = 150;
-    gameOver = false;
-    frame = 0;
-    update();
-  } else {
-    velocity = lift;
+document.addEventListener("keydown", (e) => {
+  if (e.code === "Space") {
+    parrot.velocity = parrot.lift;
     flapSound.play();
   }
-}
-document.addEventListener("keydown", e => { if (e.code === "Space") jump(); });
-canvas.addEventListener("touchstart", jump);
+});
 
-// Start
+// Mobile tap control
+canvas.addEventListener("touchstart", () => {
+  parrot.velocity = parrot.lift;
+  flapSound.play();
+});
+
+// Start game
 update();
