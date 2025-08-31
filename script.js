@@ -193,5 +193,7 @@ function resetGame() {
     update();
 }
 
-// Start Game
-update();
+function startGame() {
+  update();
+}
+
