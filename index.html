@@ -4,10 +4,31 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Flappy Parrot</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #70c5ce;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+    canvas {
+      background: #70c5ce;
+      display: block;
+      border: 2px solid #333;
+      border-radius: 10px;
+    }
+  </style>
 </head>
 <body>
-  <canvas id="gameCanvas"></canvas>
+  <!-- Game Canvas -->
+  <canvas id="gameCanvas" width="480" height="640"></canvas>
+
+  <!-- Game Script -->
   <script src="script.js"></script>
 </body>
 </html>
