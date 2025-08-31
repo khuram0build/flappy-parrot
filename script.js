@@ -1,178 +1,197 @@
-// ================== CANVAS SETUP ==================
+// ==========================
+// Flappy Parrot - Final Script
+// ==========================
+
+// Canvas setup
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
+// Auto resize for mobile/PC
 canvas.width = window.innerWidth > 480 ? 480 : window.innerWidth - 20;
 canvas.height = window.innerHeight > 640 ? 640 : window.innerHeight - 20;
 
-// ================== LOAD IMAGES ==================
-let bgImg = new Image();
-bgImg.src = "assets/images/background.png";
+// ==========================
+// Load Assets
+// ==========================
 
-let groundImg = new Image();
-groundImg.src = "assets/images/ground.png";
+// Sounds
+let flapSound = new Audio("assets/sounds/flap.mp3");
+let crashSound = new Audio("assets/sounds/crash.mp3");
+let pointSound = new Audio("assets/sounds/point.mp3");
 
+// Images
 let parrotImg = new Image();
 parrotImg.src = "assets/images/parrot.png";
 
 let pipeImg = new Image();
 pipeImg.src = "assets/images/pipe.png";
 
-// ================== LOAD SOUNDS ==================
-let flapSound = new Audio("assets/sounds/flap.mp3");
-let crashSound = new Audio("assets/sounds/crash.mp3");
-let pointSound = new Audio("assets/sounds/point.mp3");
+let bgImg = new Image();
+bgImg.src = "assets/images/background.png";
 
-// ================== GAME VARIABLES ==================
-let parrot = { x: 50, y: 150, width: 40, height: 40, gravity: 0, jump: -6 };
+let groundImg = new Image();
+groundImg.src = "assets/images/ground.png";
+
+// ==========================
+// Game Variables
+// ==========================
+let parrot = {
+    x: 50,
+    y: 150,
+    width: 40,
+    height: 40,
+    gravity: 0.6,
+    lift: -10,
+    velocity: 0
+};
+
 let pipes = [];
-let pipeGap = 150;
 let pipeWidth = 60;
-let pipeSpeed = 2;
+let pipeGap = 150;
+let frame = 0;
 let score = 0;
 let bestScore = localStorage.getItem("bestScore") || 0;
 let gameOver = false;
-let started = false; // 👈 Intro ke liye
-let frame = 0;
 
-// ================== INPUT HANDLERS ==================
-document.addEventListener("keydown", e => {
-  if (e.code === "Space") handleInput();
+let pipeSpeed = 2;
+
+// ==========================
+// Event Listeners
+// ==========================
+document.addEventListener("keydown", function (e) {
+    if (e.code === "Space") {
+        parrotJump();
+    }
 });
-canvas.addEventListener("touchstart", handleInput);
 
-function handleInput() {
-  if (!started) {
-    started = true; // 👈 Intro se game start
-  } else if (!gameOver) {
-    parrot.gravity = parrot.jump;
-    flapSound.play();
-  } else {
-    resetGame(); // Restart
-  }
+canvas.addEventListener("touchstart", function () {
+    parrotJump();
+});
+
+function parrotJump() {
+    if (!gameOver) {
+        parrot.velocity = parrot.lift;
+        flapSound.play();
+    } else {
+        resetGame();
+    }
 }
 
-// ================== DRAW FUNCTIONS ==================
+// ==========================
+// Draw Functions
+// ==========================
 function drawParrot() {
-  ctx.drawImage(parrotImg, parrot.x, parrot.y, parrot.width, parrot.height);
+    ctx.drawImage(parrotImg, parrot.x, parrot.y, parrot.width, parrot.height);
 }
 
-function drawPipes() {
-  pipes.forEach(pipe => {
-    ctx.drawImage(pipeImg, pipe.x, pipe.y, pipeWidth, pipe.height);
-  });
+function drawBackground() {
+    ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
 }
 
 function drawGround() {
-  ctx.drawImage(groundImg, 0, canvas.height - 100, canvas.width, 100);
+    ctx.drawImage(groundImg, 0, canvas.height - 50, canvas.width, 50);
 }
 
-function drawScore() {
-  ctx.fillStyle = "white";
-  ctx.font = "20px Arial";
-  ctx.fillText("Score: " + score, 20, 30);
-  ctx.fillText("Best: " + bestScore, 20, 60);
+function drawPipes() {
+    for (let i = 0; i < pipes.length; i++) {
+        let p = pipes[i];
+        ctx.drawImage(pipeImg, p.x, 0, pipeWidth, p.top);
+        ctx.drawImage(pipeImg, p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
+    }
 }
 
-// ================== GAME LOGIC ==================
+// ==========================
+// Update Loop
+// ==========================
 function update() {
-  ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height); // background
-
-  if (!started) {
-    // 👇 Intro Screen
-    ctx.fillStyle = "white";
-    ctx.font = "30px Arial";
-    ctx.fillText("Flappy Parrot", canvas.width / 2 - 90, canvas.height / 2 - 40);
-    ctx.font = "20px Arial";
-    ctx.fillText("Tap or Press SPACE to Start", canvas.width / 2 - 120, canvas.height / 2);
-    drawParrot();
-    requestAnimationFrame(update);
-    return;
-  }
-
-  if (!gameOver) {
-    frame++;
-
-    // Parrot gravity
-    parrot.gravity += 0.3;
-    parrot.y += parrot.gravity;
-
-    // Add pipes
-    if (frame % 100 === 0) {
-      let pipeY = Math.random() * (canvas.height - pipeGap - 200) + 50;
-      pipes.push({ x: canvas.width, y: 0, height: pipeY }); // Top pipe
-      pipes.push({ x: canvas.width, y: pipeY + pipeGap, height: canvas.height }); // Bottom pipe
+    if (gameOver) {
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#fff";
+        ctx.font = "30px Arial";
+        ctx.fillText("Game Over!", canvas.width / 2 - 80, canvas.height / 2 - 40);
+        ctx.fillText("Score: " + score, canvas.width / 2 - 60, canvas.height / 2);
+        ctx.fillText("Best: " + bestScore, canvas.width / 2 - 60, canvas.height / 2 + 40);
+        ctx.fillText("Tap / Space to Restart", canvas.width / 2 - 140, canvas.height / 2 + 100);
+        return;
     }
 
-    // Move pipes
-    pipes.forEach(pipe => (pipe.x -= pipeSpeed));
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Collision detection
-    pipes.forEach(pipe => {
-      if (
-        parrot.x < pipe.x + pipeWidth &&
-        parrot.x + parrot.width > pipe.x &&
-        parrot.y < pipe.y + pipe.height &&
-        parrot.y + parrot.height > pipe.y
-      ) {
-        crashSound.play();
-        gameOver = true;
-      }
-    });
+    // Draw background
+    drawBackground();
+
+    // Pipes
+    if (frame % 100 === 0) {
+        let top = Math.random() * (canvas.height / 2);
+        let bottom = canvas.height - top - pipeGap - 50;
+        pipes.push({ x: canvas.width, top: top, bottom: bottom });
+    }
+
+    for (let i = 0; i < pipes.length; i++) {
+        let p = pipes[i];
+        p.x -= pipeSpeed;
+
+        // Collision
+        if (
+            parrot.x < p.x + pipeWidth &&
+            parrot.x + parrot.width > p.x &&
+            (parrot.y < p.top || parrot.y + parrot.height > canvas.height - p.bottom - 50)
+        ) {
+            gameOver = true;
+            crashSound.play();
+        }
+
+        // Score
+        if (p.x + pipeWidth === parrot.x) {
+            score++;
+            pointSound.play();
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem("bestScore", bestScore);
+            }
+        }
+    }
 
     // Remove old pipes
-    pipes = pipes.filter(pipe => pipe.x + pipeWidth > 0);
-
-    // Score
-    if (frame % 100 === 0) {
-      score++;
-      pointSound.play();
-      if (score > bestScore) {
-        bestScore = score;
-        localStorage.setItem("bestScore", bestScore);
-      }
+    if (pipes.length && pipes[0].x < -pipeWidth) {
+        pipes.shift();
     }
 
-    // Difficulty increase
-    if (score % 5 === 0 && pipeSpeed < 6) {
-      pipeSpeed += 0.002; // Dheere dheere fast hoga
-    }
-
-    // Ground hit
-    if (parrot.y + parrot.height >= canvas.height - 100) {
-      crashSound.play();
-      gameOver = true;
-    }
-
-    // Draw game objects
     drawPipes();
-    drawGround();
+
+    // Gravity
+    parrot.velocity += parrot.gravity;
+    parrot.y += parrot.velocity;
+
+    if (parrot.y + parrot.height >= canvas.height - 50) {
+        gameOver = true;
+        crashSound.play();
+    }
+
+    // Draw parrot + ground
     drawParrot();
-    drawScore();
-  } else {
-    // Game Over screen
-    ctx.fillStyle = "red";
-    ctx.font = "40px Arial";
-    ctx.fillText("Game Over", canvas.width / 2 - 100, canvas.height / 2 - 20);
+    drawGround();
+
+    // Scoreboard
+    ctx.fillStyle = "#fff";
     ctx.font = "20px Arial";
-    ctx.fillText("Tap or Press SPACE to Restart", canvas.width / 2 - 130, canvas.height / 2 + 20);
-    drawScore();
-  }
+    ctx.fillText("Score: " + score, 20, 30);
+    ctx.fillText("Best: " + bestScore, 20, 60);
 
-  requestAnimationFrame(update);
+    frame++;
+    requestAnimationFrame(update);
 }
 
-// ================== RESET GAME ==================
 function resetGame() {
-  parrot.y = 150;
-  parrot.gravity = 0;
-  pipes = [];
-  score = 0;
-  pipeSpeed = 2;
-  frame = 0;
-  gameOver = false;
-  started = false; // 👈 Restart pe intro screen
+    parrot.y = 150;
+    parrot.velocity = 0;
+    pipes = [];
+    score = 0;
+    gameOver = false;
+    frame = 0;
+    update();
 }
 
-// ================== START ==================
+// Start Game
 update();
